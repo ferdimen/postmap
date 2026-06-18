@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: PostMap
- * Description: Yazılara konum ve rotalar ekler. <br/><br/>🟢 [EKLENEN ÖZELLİKLER]:<br/>- Yakın Pinler İçin Gelişmiş Daire Alanı ve Yan Kart Popup Motoru<br/>- Hatasız İleri / Geri Al (Undo / Redo) Çizim Hafızası<br/>- Sabitlenmiş Popup Link Yönetimi ve Görünür route.png İkonu<br/>- Küresel Varsayılan İkonun Yazı Düzenleme Sayfasında Otomatik Seçili Gelmesi<br/>- Gelişmiş GitHub API Bağıntısı ve Dinamik Güncelleme Denetleyicisi<br/>- Harita Altında 'En Üste Git ↑' Hızlı Navigasyon Butonu<br/>- OSRM Yol Takip, Sürükleme ve Serbest Çizim Desteği<br/>- Kategori Bazlı Toplu Stil Değiştirici ve İkon Seçimi Önizlemeleri<br/>- 'İlgili Rota' Hızlı Erişim Butonu (Sayfa Üstü)<br/>- Alternatif Waymark Rota Autocomplete Entegrasyonu<br/>- Tam Ekran Modu (Fullscreen)<br/><br/>🔴 [KALDIRILAN ÖZELLİKLER]:<br/>- Geri alma motorundaki haritaya tüm pinleri basan dizi çakışmaları<br/>- Popup link matrisindeki CSS engellemeleri ve seçilmeyen varsayılan ikon boşlukları
- * Version: 9.8
+ * Description: Yazılara konum ve rotalar ekler. <br/><br/>🟢 [EKLENEN ÖZELLİKLER]:<br/>- Dinamik Düzenleme Butonu Akıllı Yönlendirme Motoru (Waymark/Blog Duyarlı)<br/>- Kategori Bazlı Toplu İkon ve Rota Değiştirici Bölümü (Geri Getirildi)<br/>- Özelleştirilmiş Harita Telif Yazısı (Ferdimen ve PostMap Bağlantılı)<br/>- Yakın Pinler İçin Gelişmiş Daire Alanı ve Yan Kart Popup Motoru<br/>- Hatasız İleri / Geri Al (Undo / Redo) Çizim Hafızası<br/>- Sabitlenmiş Popup Link Yönetimi ve Görünür route.png İkonu<br/>- Küresel Varsayılan İkonun Yazı Düzenleme Sayfasında Otomatik Seçili Gelmesi<br/>- Gelişmiş GitHub API Bağıntısı ve Dinamik Güncelleme Denetleyicisi<br/>- Harita Altında 'En Üste Git ↑' Hızlı Navigasyon Butonu<br/>- OSRM Yol Takip, Sürükleme ve Serbest Çizim Desteği<br/>- Kategori Bazlı Toplu Stil Değiştirici ve İkon Seçimi Önizlemeleri<br/>- 'İlgili Rota' Hızlı Erişim Butonu (Sayfa Üstü)<br/>- Alternatif Waymark Rota Autocomplete Entegrasyonu<br/>- Tam Ekran Modu (Fullscreen)<br/><br/>🔴 [KALDIRILAN ÖZELLİKLER]:<br/>- Geri alma motorundaki haritaya tüm pinleri basan dizi çakışmaları<br/>- Popup link matrisindeki CSS engellemeleri ve seçilmeyen varsayılan ikon boşlukları
+ * Version: 9.9
  * Author: Ferdimen
  */
 
@@ -16,14 +16,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_filter( 'pre_set_site_transient_update_plugins', 'pm_github_update_checker' );
 function pm_github_update_checker( $transient ) {
     if ( empty( $transient->checked ) ) return $transient;
-    $username = 'Ferdimen'; $repository = 'postmap'; $plugin_slug = plugin_basename(__FILE__);
+    $username = 'ferdimen'; $repository = 'postmap'; $plugin_slug = plugin_basename(__FILE__);
     $remote_url = "https://api.github.com/repos/{$username}/{$repository}/releases/latest";
     $response = wp_remote_get( $remote_url, array('timeout' => 15, 'headers' => array('Accept' => 'application/vnd.github.v3+json', 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) PostMap-WP-Client')));
     if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) == 200 ) {
         $release_info = json_decode( wp_remote_retrieve_body( $response ) );
         if ( $release_info && isset( $release_info->tag_name ) ) {
             $version = str_replace( array('v', 'V'), '', $release_info->tag_name );
-            if ( version_compare( $version, '9.8', '>' ) ) {
+            if ( version_compare( $version, '9.9', '>' ) ) {
                 $obj = new stdClass(); $obj->slug = 'postmap'; $obj->plugin = $plugin_slug; $obj->new_version = $version;
                 $obj->url = "https://github.com/{$username}/{$repository}"; $obj->package = isset($release_info->zipball_url) ? $release_info->zipball_url : '';
                 $transient->response[$plugin_slug] = $obj;
@@ -74,7 +74,7 @@ function pm_ferdimen_addons_main_page() {
             <tbody>
                 <tr>
                     <td style="padding: 15px; vertical-align: middle;"><strong>PostMap</strong></td>
-                    <td style="padding: 15px; vertical-align: middle;"><code>9.8</code></td>
+                    <td style="padding: 15px; vertical-align: middle;"><code>9.9</code></td>
                     <td style="padding: 15px; vertical-align: middle;">
                         <button type="button" class="button button-secondary" id="pm_manual_check_updates" style="font-weight: 600;">🔄 Güncellemeleri Denetle</button>
                         <span id="pm_update_status" style="margin-left:10px; font-weight:bold; color:#2271b1;"></span>
@@ -105,14 +105,14 @@ function pm_ferdimen_addons_main_page() {
 
 add_action('wp_ajax_pm_force_check_github_update', 'pm_force_check_github_update_callback');
 function pm_force_check_github_update_callback() {
-    $username = 'Ferdimen'; $repository = 'postmap';
+    $username = 'ferdimen'; $repository = 'postmap';
     $response = wp_remote_get("https://api.github.com/repos/{$username}/{$repository}/releases/latest", array('timeout'=>15, 'headers'=>array('Accept'=>'application/vnd.github.v3+json','User-Agent'=>'Mozilla/5.0 (Windows NT 10.0; Win64; x64) PostMap-WP-Client')));
     if(!is_wp_error($response) && wp_remote_retrieve_response_code($response) == 200) {
         $info = json_decode(wp_remote_retrieve_body($response));
         if($info && isset($info->tag_name)) {
             $v = str_replace(array('v','V'), '', $info->tag_name);
-            if(version_compare($v, '9.8', '>')) { wp_send_json_success("Yeni sürüm mevcut: v" . $v . "! Eklentiler sayfasından güncelleyebilirsiniz."); }
-            else { wp_send_json_success("PostMap güncel. En son sürümü (v9.8) kullanıyorsunuz."); }
+            if(version_compare($v, '9.9', '>')) { wp_send_json_success("Yeni sürüm mevcut: v" . $v . "! Eklentiler sayfasından güncelleyebilirsiniz."); }
+            else { wp_send_json_success("PostMap güncel. En son sürümü (v9.9) kullanıyorsunuz."); }
         }
     }
     wp_send_json_error("GitHub bağlantısı başarısız oldu veya release bulunamadı.");
@@ -162,6 +162,18 @@ function pm_is_feature_active($feature_key) {
     return isset($features[$feature_key]) && $features[$feature_key] === '1';
 }
 
+// DINAMIK HARITA TELIF VE LINK MOTORU
+function pm_get_map_tile_details() {
+    $default_attr = '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>';
+    $custom_addon_attr = ' - <a href="https://github.com/ferdimen/postmap" target="_blank">PostMap</a> by <a href="https://ferdimen.com/" target="_blank">Ferdimen</a>';
+    $final_attribution = $default_attr . $custom_addon_attr;
+
+    if ( get_option( 'pm_harita_altlik', 'topo' ) === 'topo' ) { 
+        return array('url' => 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', 'attr' => $final_attribution); 
+    }
+    return array('url' => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 'attr' => $final_attribution);
+}
+
 // =========================================================================
 // 3. AYARLAR VE YÖNETİM PANELİ
 // =========================================================================
@@ -192,11 +204,15 @@ function pm_postmap_admin_page() {
         echo '<div class="updated"><p>💾 <strong>PostMap Ayarları Başarıyla Kaydedildi!</strong></p></div>';
     }
 
+    // VERSIYON 9.7 GERI GETIRILEN: KATEGORI BAZLI TOPLU IKON VE ROTA DEGISTIRICI MOTORU
     if ( isset($_POST['pm_bulk_cat_submit']) && check_admin_referer('pm_bulk_cat_nonce_action', 'pm_bulk_cat_nonce') ) {
         $selected_cats = isset($_POST['pm_bulk_categories']) ? array_map('intval', $_POST['pm_bulk_categories']) : array();
-        $target_icon = sanitize_text_field($_POST['pm_bulk_icon']); $target_color = sanitize_hex_color($_POST['pm_bulk_color']);
+        $target_icon = sanitize_text_field($_POST['pm_bulk_icon']); 
+        $target_color = sanitize_hex_color($_POST['pm_bulk_color']);
+        
         if (!empty($selected_cats)) {
-            $bulk_query = new WP_Query(array('post_type' => 'post', 'posts_per_page' => -1, 'post_status' => 'any', 'category__in' => $selected_cats)); $bulk_counter = 0;
+            $bulk_query = new WP_Query(array('post_type' => 'post', 'posts_per_page' => -1, 'post_status' => 'any', 'category__in' => $selected_cats)); 
+            $bulk_counter = 0;
             if ($bulk_query->have_posts()) {
                 while ($bulk_query->have_posts()) {
                     $bulk_query->the_post(); $pid = get_the_ID();
@@ -206,7 +222,7 @@ function pm_postmap_admin_page() {
                 }
                 wp_reset_postdata();
             }
-            echo '<div class="updated"><p>🎯 <strong>Kategori Eşitlemesi Başarılı:</strong> ' . $bulk_counter . ' yazı güncellendi.</p></div>';
+            echo '<div class="updated"><p>🎯 <strong>Kategori Eşitlemesi Başarılı:</strong> ' . $bulk_counter . ' yazı başarıyla güncellendi.</p></div>';
         }
     }
 
@@ -231,7 +247,7 @@ function pm_postmap_admin_page() {
     $all_wp_categories = get_categories(array('hide_empty' => 0));
     ?>
     <div class="wrap">
-        <h1>PostMap Yönetim Paneli (Sürüm 9.8)</h1>
+        <h1>PostMap Yönetim Paneli (Sürüm 9.9)</h1>
         
         <form method="post" action="">
             <input type="hidden" name="pm_save_settings_form_submit" value="1" />
@@ -263,7 +279,7 @@ function pm_postmap_admin_page() {
                     </tr>
                     <tr>
                         <td><strong>Popup Düzenleme İkonu (✏️)</strong></td>
-                        <td>Adminlere popup içerisinde sağ üstte hızlı yazı düzenleme linki sunar.</td>
+                        <td>Adminlere popup içerisinde sağ üstte hızlı yazı veya Waymark düzenleme linki sunar.</td>
                         <td style="text-align:center;"><input type="checkbox" name="pm_active_features[popup_edit]" value="1" <?php checked(isset($active_features['popup_edit']) && $active_features['popup_edit'] === '1'); ?> /></td>
                     </tr>
                     <tr>
@@ -310,7 +326,6 @@ function pm_postmap_admin_page() {
                                 <option value="<?php echo esc_attr($k); ?>" <?php selected($varsayilan_pin, $k); ?>><?php echo esc_html($p['name']); ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <img id="pm_varsayilan_pin_preview" src="" style="max-height: 35px; margin-left: 10px; vertical-align: middle; display: none;" />
                     </td>
                 </tr>
             </table>
@@ -322,13 +337,51 @@ function pm_postmap_admin_page() {
                 </label>
             </div>
         </form>
+
+        <div style="margin-top: 35px; padding: 20px; background: #fff; border: 1px solid #ccd0d4; max-width: 810px; border-radius: 4px;">
+            <h2>🎯 Kategori Bazlı Toplu İkon ve Rota Değiştirici</h2>
+            <p class="description">Seçtiğiniz kategorilere ait tüm yazılardaki rotaları ve harita pin ikonlarını tek seferde toplu olarak güncelleyebilirsiniz.</p>
+            <form method="post" action="">
+                <?php wp_nonce_field('pm_bulk_cat_nonce_action', 'pm_bulk_cat_nonce'); ?>
+                <div style="margin-top:15px;">
+                    <label style="font-weight:bold; display:block; margin-bottom:5px;">Hedef Kategorileri Seçin:</label>
+                    <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f9f9f9;">
+                        <?php foreach($all_wp_categories as $cat): ?>
+                            <label style="display:block; margin-bottom:4px;"><input type="checkbox" name="pm_bulk_categories[]" value="<?php echo $cat->term_id; ?>" /> <?php echo esc_html($cat->name); ?> (<?php echo $cat->count; ?>)</label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div style="display:flex; gap:20px; margin-top:15px; flex-wrap: wrap;">
+                    <div style="flex:1; min-width:200px;">
+                        <label style="font-weight:bold; display:block; margin-bottom:5px;">Uygulanacak İkon:</label>
+                        <select name="pm_bulk_icon" style="width:100%;">
+                            <option value="">-- Değiştirme (Mevcut Kalsın) --</option>
+                            <?php foreach($mevcut_pinler as $k => $p): ?>
+                                <option value="<?php echo esc_attr($k); ?>"><?php echo esc_html($p['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div style="flex:1; min-width:200px;">
+                        <label style="font-weight:bold; display:block; margin-bottom:5px;">Uygulanacak Rota Çizgi Rengi:</label>
+                        <input type="color" name="pm_bulk_color" value="" style="width:100%; height:30px; padding:0; cursor:pointer;" />
+                    </div>
+                </div>
+                <div style="margin-top:20px;">
+                    <input type="submit" name="pm_bulk_cat_submit" class="button button-secondary" style="font-weight:bold; background:#2271b1; color:#fff; border-color:#135e96;" value="Seçili Kategorileri Toplu Güncelle 🚀" onclick="return confirm('Seçilen kategorilerdeki tüm yazılar ezilecek. Emin misiniz?');" />
+                </div>
+            </form>
+        </div>
+
+        <div style="margin-top: 30px; background: #fff; padding: 20px; border: 1px solid #ccd0d4; max-width: 810px;">
+            <h2>📦 Veri Transferi ve Yedekleme</h2>
+            <p>Tüm harita verilerini, koordinatları ve el çizimi özel rotaları tek tıkla <code>veri.json</code> olarak dışa aktar.</p>
+            <form method="post" action="">
+                <?php wp_nonce_field( 'pm_download_nonce_action', 'pm_download_nonce' ); ?>
+                <input type="submit" name="pm_download_json" class="button button-secondary" value="📥 Tüm Harita Rotalarını JSON İndir" />
+            </form>
+        </div>
     </div>
     <?php
-}
-
-function pm_get_map_tile_details() {
-    if ( get_option( 'pm_harita_altlik', 'topo' ) === 'topo' ) { return array('url' => 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', 'attr' => '© OpenTopoMap'); }
-    return array('url' => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 'attr' => '© OpenStreetMap');
 }
 
 // =========================================================================
@@ -406,7 +459,6 @@ function pm_konum_metabox_ekle() { add_meta_box( 'pm_konum_meta', 'Yazı Konum v
 function pm_konum_metabox_html( $post ) {
     $konum = get_post_meta( $post->ID, '_wm_koordinat', true );
     
-    // SABİTLEME: Eğer yazıda özel ikon yoksa yönetim panelindeki varsayılan ikon doğrudan çekilir.
     $varsayilan_ayar_pin = get_option('pm_varsayilan_pin', 'leaflet-default');
     $ikon_secimi = get_post_meta( $post->ID, '_wm_ozel_ikon', true );
     if ( empty($ikon_secimi) ) { $ikon_secimi = $varsayilan_ayar_pin; }
@@ -487,7 +539,7 @@ function pm_konum_metabox_html( $post ) {
         var mapOptions = { zoomControl: false };
         <?php if(pm_is_feature_active('fullscreen')): ?> mapOptions.fullscreenControl = true; <?php endif; ?>
         var map = L.map('wm_admin_harita', mapOptions).setView([defaultLat, defaultLng], 11);
-        L.control.zoom({ position: 'bottomright' }).addTo(map); L.tileLayer('<?php echo $tile_info["url"]; ?>', { maxZoom: 18, attribution: '<?php echo esc_js($tile_info["attr"]); ?>' }).addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map); L.tileLayer('<?php echo $tile_info["url"]; ?>', { maxZoom: 18, attribution: '<?php echo $tile_info["attr"]; ?>' }).addTo(map);
 
         var currentSelectedRadio = document.querySelector('input[name="wm_ozel_ikon"]:checked');
         var initialIcon = (currentSelectedRadio && currentSelectedRadio.value !== 'leaflet-default') ? L.icon({ iconUrl: currentSelectedRadio.getAttribute('data-url'), iconSize: [35, 35], iconAnchor: [17, 35], popupAnchor: [0, -35] }) : new L.Icon.Default();
@@ -533,7 +585,6 @@ function pm_konum_metabox_html( $post ) {
             drawnRouteInput.value = JSON.stringify(routePoints);
         }
 
-        // SABİTLEME: Sadece rota çizgisini etkiler, harita marker'ına veya dış elemanlara dokunmaz.
         L.DomEvent.on(mapControls._btnUndo, 'click', function(e) {
             L.DomEvent.preventDefault(e);
             if (historyIndex > 0) {
@@ -697,7 +748,12 @@ function pm_frontend_harita_shortcode() {
             $waymark_url = $waymark_id ? get_permalink($waymark_id) : '';
             $blog_url = get_permalink(); $title = get_the_title();
 
-            // POPUP MİMARİSİ VE SEÇENEK KOŞULLARI (route.png ÜZERİNDEKİ TIKLAMA ENGELLERİ KALDIRILDI)
+            // DINAMIK ✏️ LINK HESAPLAMA MOTORU (Sadece Waymark aktifse doğrudan Waymark Harita Editörüne uçar)
+            $edit_url = get_edit_post_link($post_id);
+            if ($show_waymark_opt === '1' && $show_blog_opt === '0' && !empty($waymark_id)) {
+                $edit_url = admin_url('post.php?post=' . $waymark_id . '&action=edit');
+            }
+
             $popup_html = '<div class="pm-popup-card" style="position: relative; padding: 10px; padding-top: 28px; border: 1px solid #ddd; border-radius: 6px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.08); width: 230px; box-sizing:border-box; margin-bottom:5px;">';
             $popup_html .= '<div class="pm-popup-top-bar" style="position: absolute; top: 5px; left: 6px; right: 6px; display: flex; justify-content: space-between; align-items: center; z-index:9999;">';
             $popup_html .= '<div class="pm-popup-top-left" style="height: 20px; width: 20px; display:block;">';
@@ -708,7 +764,7 @@ function pm_frontend_harita_shortcode() {
             $popup_html .= '</div>';
             
             $popup_html .= '<div class="pm-popup-top-right" style="height: 20px;">';
-            if ($is_admin_logged_in) { $popup_html .= '<a href="'.esc_url(get_edit_post_link($post_id)).'" target="_blank" style="text-decoration: none; font-size: 13px; display: block;" title="Yazıyı Düzenle">✏️</a>'; }
+            if ($is_admin_logged_in) { $popup_html .= '<a href="'.esc_url($edit_url).'" target="_blank" style="text-decoration: none; font-size: 13px; display: block;" title="Düzenleme Sayfasına Git">✏️</a>'; }
             $popup_html .= '</div></div>';
 
             if ($gorsel) { $popup_html .= '<img src="'.esc_url($gorsel).'" style="width:100%; height:auto; border-radius: 4px; margin-bottom: 6px; display: block;" />'; }
@@ -725,11 +781,10 @@ function pm_frontend_harita_shortcode() {
             }
             $popup_html .= '</div></div>';
 
-            // YAN KÜÇÜK LİSTE KARTI (ÇOKLU PİNLER İÇİN)
             $mini_html = '<div style="display:flex; align-items:center; gap:8px; padding:6px; border-bottom:1px solid #eee; background:#fff;">';
             if($gorsel) { $mini_html .= '<img src="'.esc_url($gorsel).'" style="width:40px; height:30px; object-fit:cover; border-radius:2px;" />'; }
             $mini_html .= '<div style="flex:1; font-size:11px; line-height:1.2;">';
-            if($show_blog_opt === '1') { $mini_html .= '<a href="'.esc_url($blog_url).'" target="_blank" style="font-weight:bold; text-decoration:none; color:#2271b1;">'.esc_html($title).'</a>'; }
+            if($show_blog_opt === '1') { $mini_html .= '<a href="'.esc_url($blog_url).'" target="_blank; font-weight:bold; text-decoration:none; color:#2271b1;">'.esc_html($title).'</a>'; }
             else { $mini_html .= '<span style="font-weight:bold; color:#333;">'.esc_html($title).'</span>'; }
             if(!empty($waymark_url) && $show_waymark_opt === '1') { $mini_html .= ' <a href="'.esc_url($waymark_url).'" target="_blank" style="font-size:10px; color:green; margin-left:5px;">[Rota 🗺️]</a>'; }
             $mini_html .= '</div></div>';
@@ -757,11 +812,10 @@ function pm_frontend_harita_shortcode() {
         if (typeof L === "undefined") return; var mapData = <?php echo json_encode( $markers_js_data ); ?>;
         var mapOptions = { zoomControl: false }; <?php if(pm_is_feature_active('fullscreen')): ?> mapOptions.fullscreenControl = true; <?php endif; ?>
         var feMap = L.map('wm_frontend_map', mapOptions);
-        L.control.zoom({ position: 'bottomright' }).addTo(feMap); L.tileLayer('<?php echo $tile_info["url"]; ?>', { maxZoom: 17, attribution: '<?php echo esc_js($tile_info["attr"]); ?>' }).addTo(feMap);
+        L.control.zoom({ position: 'bottomright' }).addTo(feMap); L.tileLayer('<?php echo $tile_info["url"]; ?>', { maxZoom: 17, attribution: '<?php echo $tile_info["attr"]; ?>' }).addTo(feMap);
         
         var activeRoutesGroup = L.layerGroup().addTo(feMap); var boundsArray = [];
         
-        // DAİRESEL ALAN KÜMELEME MOTORU (Tıklanan pine 60 metre yarıçapındaki tüm komşuları bulur)
         function getNearbyMarkers(targetLat, targetLng, radiusMeters) {
             var targetLatLng = L.latLng(targetLat, targetLng);
             return mapData.filter(function(item) {
@@ -780,7 +834,7 @@ function pm_frontend_harita_shortcode() {
 
             marker.on('click', function() {
                 activeRoutesGroup.clearLayers();
-                var nearby = getNearbyMarkers(item.lat, item.lng, 60); // 60 metrelik daire alanı alanı
+                var nearby = getNearbyMarkers(item.lat, item.lng, 60);
                 var popupMasterHtml = '<div class="pm-popup-scroll-container">';
                 
                 if (nearby.length === 1) {
